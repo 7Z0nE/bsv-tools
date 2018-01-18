@@ -20,8 +20,20 @@ show_help()
 	echo -e "\t ${bold}packagename${endbold} default: '<filename>'"
 }
 
-run()
+# $1 : the file to build
+# $2 : the name of the package, defaults to the <filename without .bsv>
+# $3 : the name of the module, defaults to 'mk'+<filename without .bsv>
+# out: echoes the name of the executable
+build()
 {
+	if [ ! -f $2 ]; then
+		show_help "File does not exists: $1"
+		exit
+	fi
+	if ! [[ $2 == *.bsv ]]; then
+		show_help "Input file should be a .bsv"
+		exit	
+	fi
 	if [ ! -d "$BUILDDIR" ]; then
 		echo "Build directory does not exists. Creating it."
 		mkdir "$BUILDDIR"
@@ -33,21 +45,17 @@ run()
 	echo "No modulename specified using modulename '$moduleName'"
 	bsc -bdir $BUILDDIR -simdir $BUILDDIR -u -sim -g $moduleName $filePath
 	bsc -bdir $BUILDDIR -simdir $BUILDDIR -sim -o $outFile -e $moduleName
-	bash $outFile
+	echo "$outFile" 
 }
 
 #parse command
 case "$1" in
 		run)
-			if [ ! -f $2 ]; then
-				show_help "File does not exists: $1"
-				exit
-			fi
-			if ! [[ $2 == *.bsv ]]; then
-				show_help "Input file should be a .bsv"
-				exit	
-			fi
-			run $2
+			executable=$( build $2 )
+			bash $executable
+			;;
+		build)
+			build $2
 			;;
 		*) show_help "Unknown command $1"
 esac
